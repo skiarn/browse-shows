@@ -1,12 +1,11 @@
-
 <h1>{{.Name}}</h1>
-
+<p>{{.Description}}</p>
 {{ range $key, $group := index .ParticipantGroups }}
     <p>{{ $group.Name }}</p>
       {{ range $gkey , $participant := index $group.Participants }}
         <li><strong>{{ $participant.Name }}</strong>
           <p>{{ $participant.Description }}</p>
-          <a href="/view/deltagare/{{ $participant.Name }}">mer</a>
+          <a href="/view/participant/{{ $participant.PersonTag }}">mer</a>
         </li>
       {{ end }}
 {{ end }}

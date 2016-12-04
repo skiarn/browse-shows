@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/skiarn/browse-shows/templator"
@@ -16,6 +17,27 @@ import (
 type Test struct {
 	Name        string
 	LuckyNumber int64
+}
+
+func TestIsValid(t *testing.T) {
+	req, err := http.NewRequest("GET", "/view/id123", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	regexp := regexp.MustCompile("^/(view)/([a-zA-Z0-9_-]+)$")
+	templatorTest := &templator.Templator{ValidURLPath: regexp}
+	isValid, params := templatorTest.IsValid(req)
+
+	if !isValid {
+		t.Errorf("expected request: got %v to be valid", req)
+	}
+
+	expectedParams := `/view/id123,view,id123`
+	got := strings.Join(params, ",")
+	if got != expectedParams {
+		t.Errorf("expected url params: got %v want %v",
+			got, expectedParams)
+	}
 }
 
 func TestViewHandler(t *testing.T) {

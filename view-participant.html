@@ -1,0 +1,8 @@
+{{ range $key, $results := index .Participant.Results }}
+  <div style="clear:both;">
+    <h1>{{$results.Title}}</h1>
+    <img src="{{$results.Image}}" style="width: 20%; height: 20%; float: left;">
+    <p>{{$results.Description}}</p>
+    <a href="{{$.Link}}/program/{{$results.Program.Name}}?video_id={{$results.ID}}">See external link</a>
+  </div>
+{{ end }}
