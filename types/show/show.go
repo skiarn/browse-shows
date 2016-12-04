@@ -1,76 +1,35 @@
-package program
+package show
 
 import (
 	"encoding/json"
 	"html/template"
+	"io"
 	"net/http"
-	"regexp"
 	"time"
+
+	"github.com/skiarn/browse-shows/templator"
 )
 
-func New(url string, validPath string, tmplPaths ...string) *Program {
-	regexp := regexp.MustCompile(validPath)
-	tmpls := template.Must(template.ParseFiles(tmplPaths...))
-	return &Program{validURLPath: regexp, templates: tmpls, baseApiUrl: url}
-}
-
-type Program struct {
-	Title        string
-	Info         Info //map[string]interface{}
-	validURLPath *regexp.Regexp
-	templates    *template.Template
-	baseApiUrl   string
-}
-
-func ViewHandler(w http.ResponseWriter, r *http.Request, title string, apiurl string, tmpl *template.Template) {
-	p, err := loadProgram(title, apiurl)
-	if err != nil {
-		http.NotFound(w, r)
-		return
+//RemoteAPIURL implements templator.BuildAPIURL
+func RemoteAPIURL(url *string) templator.BuildAPIURL {
+	return func(params []string) string {
+		return *url + "/site/programs/" + params[2]
 	}
-	renderTemplate(tmpl, w, "view", p)
 }
 
-//ProgramRequest is composed of, http request, http response, program title, templates for program, finally api url.
-type ProgramRequest func(http.ResponseWriter, *http.Request, string, string, *template.Template)
-
-func Handler(fn ProgramRequest, p *Program) http.HandlerFunc {
-	return handler(fn, p.validURLPath, p.baseApiUrl, p.templates)
-}
-
-//Handler takes a ProgramRequest and a regexp used to strip program title from request url.
-func handler(fn ProgramRequest, validPath *regexp.Regexp, apiurl string, tmpl *template.Template) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		m := validPath.FindStringSubmatch(r.URL.Path)
-		if m == nil {
-			http.NotFound(w, r)
-			return
+//Render implements templator.RenderTemplate
+func Render() templator.RenderTemplate {
+	return func(tmpl *template.Template, w http.ResponseWriter, tmplName string, body io.Reader) error {
+		var info Show
+		if err := json.NewDecoder(body).Decode(&info); err != nil {
+			return err
 		}
-		fn(w, r, m[2], apiurl, tmpl)
+		return tmpl.ExecuteTemplate(w, tmplName+".html", info)
 	}
 }
 
-func loadProgram(title string, baseurl string) (*Program, error) {
-	resp, err := http.Get(baseurl + "/site/programs/" + title)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	var info Info //map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
-		return nil, err
-	}
-	return &Program{Title: title, Info: info}, nil
-}
-
-func renderTemplate(tmpl *template.Template, w http.ResponseWriter, tmplName string, p *Program) {
-	err := tmpl.ExecuteTemplate(w, tmplName+".html", p)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-type Info struct {
+//Show is a entity showing information about a show.
+type Show struct {
 	Nid                 string `json:"nid"`
 	Name                string `json:"name"`
 	Channel             string `json:"channel"`

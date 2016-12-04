@@ -1,6 +1,7 @@
-<h1>{{.Info.Name}}</h1>
 
-{{ range $key, $group := index .Info.ParticipantGroups }}
+<h1>{{.Name}}</h1>
+
+{{ range $key, $group := index .ParticipantGroups }}
     <p>{{ $group.Name }}</p>
       {{ range $gkey , $participant := index $group.Participants }}
         <li><strong>{{ $participant.Name }}</strong>
